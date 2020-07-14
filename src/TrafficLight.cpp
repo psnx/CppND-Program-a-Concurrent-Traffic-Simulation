@@ -79,7 +79,6 @@ void TrafficLight::cycleThroughPhases()
     // Also, the while-loop should use std::this_thread::sleep_for to wait 1ms between two cycles. 
 {
     long intervall = generateNewCycleIterval();
-    std::future<void> future;
     std::chrono::time_point<std::chrono::system_clock> lastUpdate{std::chrono::system_clock::now()};
 
     while (true){
@@ -89,15 +88,12 @@ void TrafficLight::cycleThroughPhases()
         if (elapsed >= intervall) {
             if (_currentPhase == TrafficLightPhase::red) {
                 _currentPhase = TrafficLightPhase::green;
-                future = std::async(std::launch::async, &MessageQueue<TrafficLightPhase>::send, traffic_light_queue, _currentPhase);
-                intervall = generateNewCycleIterval();
-                future.wait();
-                lastUpdate = std::chrono::system_clock::now();
+                traffic_light_queue->send(std::move(_currentPhase));
             } else {
                 _currentPhase = TrafficLightPhase::red;
-                intervall = generateNewCycleIterval();
-                lastUpdate = std::chrono::system_clock::now();
             }
+            intervall = generateNewCycleIterval();
+            lastUpdate = std::chrono::system_clock::now();
         }
     }
     
